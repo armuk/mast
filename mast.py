@@ -7,37 +7,16 @@ Created by Scott Roberts.
 Copyright (c) 2013 TogaFoamParty Studios. All rights reserved.
 """
 
+import sys, os, csv
+
 from optparse import OptionParser
+from twilio.rest import TwilioRestClient
 
-'''
-# Setup Logging
-import logging
-logger = logging.getLogger('default')
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# Setup logging to file
-fh = logging.FileHandler('default.log')
-fh.setLevel(logging.DEBUG)
-logger.addHandler(fh)
-# Setup logging to console
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-logger.addHandler(ch)
-# Setup logging to syslog
-import logging.handlers
-sh = logging.handlers.SysLogHandler()
-sh.setLevel(logging.DEBUG)
-logger.addHandler(sh)
+# Your Account Sid and Auth Token from twilio.com/user/account
+account_sid = os.environ.get('TWILIO_SID')
+auth_token  = os.environ.get('TWILIO_TOKEN')
+from_number = os.environ.get('TWILIO_NUMBER')
 
-# 'application' code
-logger.debug('debug message')
-logger.info('info message')
-logger.warn('warn message')
-logger.error('error message')
-logger.critical('critical message')
-'''
-
-'''
 # Setup Text Colors
 class bcolors:
     HEADER = '\033[95m'
@@ -55,55 +34,38 @@ class bcolors:
         self.FAIL = ''
         self.ENDC = ''
 
-print bcolors.OKBLUE + "Test Message" + bcolors.ENDC
-'''
+#print bcolors.OKBLUE + "Test Message" + bcolors.ENDC
 
-def foo():
-    return "foo function called"
 
-def bar():
-    return "bar function called"
+def send_text(msg_text, to_number):
+  send_text_debug(msg_text, to_number)
+
+  client = TwilioRestClient(account_sid, auth_token)
+  message = client.messages.create(body=msg_text, to=to_number, from_=from_number)
+  print message.sid
+
+def send_text_debug(msg_text, to_number):
+    print bcolors.OKBLUE + "   Sending: " + bcolors.ENDC + msg_text + bcolors.OKBLUE + "   To: " + bcolors.ENDC + to_number + bcolors.OKBLUE +  "   From: " + bcolors.ENDC + from_number
 
 def main():
-    parser = OptionParser(usage="usage: %prog [options] filepath")
-    parser.add_option("-f", "--foo",
-                      action="store",
-                      type="string",
-                      dest="foo_dest",
-                      default=None,
-                      help="You picked option foo!")
-    parser.add_option("-b", "--bar",
-                      action="store",
-                      type="string",
-                      dest="bar_dest",
-                      default=None,
-                      help="You picked option bar!")
+  message_text = sys.argv[1]
+  numbers_csv = sys.argv[2]
 
-    (options, args) = parser.parse_args()
+  msg_text = open(message_text, 'rb').read()
 
-    #Uncomment to enforce at least one final argument
-    #if len(args) != 1:
-        #parser.error("You didn't specify a target path.")
-        #return False
+  with open(numbers_csv, 'rb') as f:
+    reader = csv.reader(f)
 
-    if options.foo_dest:
-      print foo()
-    else:
-      print "Foo Dest: Blank"
-
-    if options.bar_dest:
-      print bar()
-    else:
-      print "Bar Dest: Blank"
-
-    return True
+    for row in reader:
+      print bcolors.OKGREEN + "Sending to: " + bcolors.ENDC + row[0]
+      send_text(msg_text, row[1])
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print "User aborted."
-    except SystemExit:
-        pass
-    except:
-        crash()
+  try:
+      main()
+  except KeyboardInterrupt:
+      print "User aborted."
+  except SystemExit:
+      pass
+  # except:
+  #     crash()
